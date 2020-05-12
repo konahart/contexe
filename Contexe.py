@@ -22,6 +22,7 @@ ORDR_COMMANDS = ('order', 'sequence', 'shuffle', 'pairing', 'pairings')
 HDDN_COMMANDS = ('hidden', 'identity', 'identities', 'secret')
 FLIP_COMMANDS = ('flip', 'coin', 'random')
 DECK_COMMANDS = ('deck', 'cards', 'shuffle')
+ANNC_COMMANDS = ('announce', 'say')
 HELP_COMMANDS = ('help', 'what', 'huh', 'um')
 
 HEARTS = ('heart', 'hearts', '<3', 'valentine', 'valentines')
@@ -43,7 +44,7 @@ def get_user_id(info):
         ids = [i.name.lower(), i.name.lower() + '#' + i.discriminator, '<@!' + str(i.id) + '>', str(i.id)]
         if info in ids:
             return (i.id)
-        
+
 
 def find_name_and_title(info, d):
     # grab a player's name and title from the server data
@@ -146,10 +147,10 @@ async def on_message(message):
 
     # ah, a message! i wonder what it says...
     if message.content.startswith('#') or isinstance(message.channel, discord.DMChannel):
-        
+
         # need to keep all the paperwork tidy and responses consistent
         global serverdata
-        
+
         # make the code more legible and ensure each server has an appropriate entry in the listing
         channel = message.channel
         if not isinstance(message.channel, discord.DMChannel):
@@ -159,7 +160,7 @@ async def on_message(message):
                 # these are, in order: the dict of player roles and names, the mailbox, the list of
                 # unused ordered pairs, and the boolean for whether the player list has changed since
                 # the last set of ordered pairs was created
-        
+
         # and clean up the input a bit for later stages
         command = message.content
         if command.startswith('#'):
@@ -167,71 +168,71 @@ async def on_message(message):
         command = command.strip()
         command = command.lower()
         command = command.split()
-        
+
         # the real meat of the operation
         if command[0] in SEND_COMMANDS:
             # puts a message in a server's mailbox. syntax is #[server id] [recipient] [emote] (sender)
-            
+
             if len(command) > 3:
                 if command[1] in serverdata:
                     recipient = find_name_and_title(command[2], serverdata[command[1]][0])
-                    
+
                     if recipient:
                         if command[3] in HEARTS + CROSSES:
                             if len(command) > 4:
                                 sender = find_name_and_title(command[4], serverdata[command[1]][0])
-                                
+
                                 if sender and command[3] in HEARTS:
                                     serverdata[command[1]][1].append(recipient[0] + ' ' + recipient[1] +
                                                                      ' was sent a Valentine (:heart:) from ' +
                                                                      sender[0] + ' ' + sender[1] + '.')
                                     await channel.send('Sent ' + recipient[0] + ' ' + recipient[1] +
                                                        ' a Valentine (:heart:) from ' + sender[0] + ' ' + sender[1] + '.')
-                                    
+
                                 elif sender:
                                     serverdata[command[1]][1].append(recipient[0] + ' ' + recipient[1] +
                                                                      ' was sent a Rejection (:x:) from ' +
                                                                      sender[0] + ' ' + sender[1] + '.')
                                     await channel.send('Sent ' + recipient[0] + ' ' + recipient[1] +
                                                        ' a Rejection (:x:) from ' + sender[0] + ' ' + sender[1] + '.')
-                                    
+
                                 else:
                                     # if the player put something in the sender field that wasn't found,
                                     # we want to make sure they know a mistake was made
                                     await channel.send("Second user not found.")
                             else:
                                 # if the player didn't put a name in, the message is sent anonymously
-                                if command[3] in HEARTS: 
+                                if command[3] in HEARTS:
                                     serverdata[command[1]][1].append(recipient[0] + ' ' + recipient[1] +
                                                                      ' was sent a Valentine (:heart:) ' +
                                                                      'from an anonymous admirer.')
                                     await channel.send('Sent ' + recipient[0] + ' ' + recipient[1] +
                                                        ' a Valentine (:heart:) from an anonymous admirer.')
-                                    
+
                                 else:
                                     serverdata[command[1]][1].append(recipient[0] + ' ' + recipient[1] +
                                                                      ' was sent a Rejection (:x:) from ' +
                                                                      'an anonymous opponent.')
                                     await channel.send('Sent ' + recipient[0] + ' ' + recipient[1] +
                                                        ' a Rejection (:x:) from an anonymous opponent.')
-                            
+
                         elif command[3] in RINGS + SKULLS:
                             # the last round behaves differently, and we no longer need player input for the sender
                             sender = find_name_and_title(message.author.name.lower(), serverdata[command[1]][0])
-                            
+
                             if sender and command[3] in RINGS:
                                 serverdata[command[1]][1].append(recipient[0] + ' ' + recipient[1] +
                                                                  ' was sent a Proposal (:ring:) from '
                                                                  + sender[0] + ' ' + sender[1] + '.')
                                 await channel.send('Sent ' + recipient[0] + ' ' + recipient[1] +
                                                    ' a Proposal (:ring:) from ' + sender[0] + ' ' + sender[1] + '.')
-                                
+
                             elif sender:
                                 serverdata[command[1]][1].append(recipient[0] + ' ' + recipient[1] +
                                                                  ' was sent an Assassination (:skull:).')
                                 await channel.send('Sent ' + recipient[0] + ' ' + recipient[1] +
                                                    ' an Assassination (:skull:).')
-                                
+
                             else:
                                 # i don't anticipate this'll happen often, but it's good to have
                                 await channel.send("It looks like you're not in this game. Use `#assign`" +
@@ -246,8 +247,8 @@ async def on_message(message):
                         await channel.send("First user not found.")
                 else:
                     await channel.send("Server not found. Use `# list` or `# help` on the host server to get its unique ID.")
-        
-        
+
+
         elif command[0] in MAIL_COMMANDS:
             # releases the server's mailbox, or clears it without revealing its contents
             if not isinstance(message.channel, discord.DMChannel):
@@ -255,7 +256,7 @@ async def on_message(message):
                     # clears the mailbox without opening it
                     serverdata[guild_id][1] = []
                     await channel.send("Mailbox cleared.")
-                    
+
                 else:
                     # copy the mailbox over, sort it by recipient, and get started!
                     mailbox = serverdata[guild_id][1].copy()
@@ -263,7 +264,7 @@ async def on_message(message):
                     serverdata[guild_id][1] = []
                     msg = "**Mailbox Contents**:"
                     letters = 0
-                    
+
                     for letter in mailbox:
                         if (len(msg + letter) >= 2000):
                             # make sure we don't hit the discord message limit. fool me once!
@@ -273,7 +274,7 @@ async def on_message(message):
                         else:
                             msg += "\n" + letter
                             letters += 1
-                    
+
                     # make sure we're not just sending an empty list
                     if letters > 0:
                         await channel.send(msg)
@@ -281,8 +282,8 @@ async def on_message(message):
                         await channel.send("Mailbox is currently empty.")
             else:
                 await channel.send("Sorry, this command isn't available in DMs.")
-        
-        
+
+
         elif command[0] in ASGN_COMMANDS:
             # assign game role to a user. syntax is "#assign [role] (user)"
             if not isinstance(message.channel, discord.DMChannel):
@@ -292,45 +293,45 @@ async def on_message(message):
                         player = message.author
                     else:
                         player = message.guild.get_member(get_user_id(command[2]))
-                        
+
                     if player:
                         # make sure we actually got something earlier
                         player_tag = player.name + '#' + player.discriminator
-                        
+
                         # what does the player want us to call them?
                         if player.nick:
                             player_nick = player.nick.lower()
                         else:
                             player_nick = player.name.lower()
-                        
+
                         # no doubles!
                         for key in list(serverdata[guild_id][0]):
                             if player.id == serverdata[guild_id][0][key]['id']:
                                 del serverdata[guild_id][0][key]
-                        
+
                         # assigns the role, which also eliminates any previous data in that role
                         serverdata[guild_id][0][command[1]] = {'name': player.name.lower(),
                                                                'nick': player_nick,
                                                                '@': '<@!' + str(player.id) + '>',
                                                                'id': player.id}
-                        
+
                         serverdata[guild_id][3] = True
                         await channel.send(player_nick.title() + " is now the " + command[1].title() + ".")
-                        
+
                     else:
                         await channel.send("User not recognized. Please use their full username or their mention (`@User`).")
-                        
+
                 elif len(command) > 1:
                     await channel.send("Role not recognized. Use `# list roles` to see all available roles.")
-                    
+
                 else:
                     await channel.send("Syntax error. Please format as `#assign [role] (user)`. `user` is optional, " +
                                        "and defaults to yourself.")
-            
+
             else:
                 await channel.send("Sorry, this command isn't available in DMs.")
 
-            
+
         elif command[0] in LIST_COMMANDS:
             if not isinstance(message.channel, discord.DMChannel):
                 if len(command) > 1 and command[1] in DELT_COMMANDS:
@@ -338,23 +339,23 @@ async def on_message(message):
                     for key in list(serverdata[guild_id][0]):
                         del serverdata[guild_id][0][key]
                     await channel.send("Player list cleared.")
-                    
+
                 else:
                     if len(serverdata[guild_id][0]) > 0:
                         msg = "**Players on this server**:\n"
                         for key in serverdata[guild_id][0]:
                             msg += serverdata[guild_id][0][key]['nick'].title() + " as the " + key.title() + '\n'
-                        
+
                         # i wanted to make sure there's an easier way to get the server ID than #help, so i added it here too
                         msg += "\nServer ID: " + guild_id
                         await channel.send(msg)
-                        
+
                     else:
                         await channel.send("Currently no players on this server. Use `# assign` to add them!")
             else:
                 await channel.send("Sorry, this command isn't available in DMs.")
-                
-                
+
+
         elif command[0] in DELT_COMMANDS:
             if not isinstance(message.channel, discord.DMChannel):
                 if len(command) > 1:
@@ -364,21 +365,21 @@ async def on_message(message):
                             del serverdata[guild_id][0][key]
                         serverdata[guild_id][3] = True
                         await channel.send("Player list cleared.")
-                        
+
                     elif command[1] in MAIL_COMMANDS:
                         # empties the mailbox without opening it
                         serverdata[guild_id][1] = []
                         await channel.send("Mailbox cleared.")
-                        
+
                     elif command[1] in ARCHETYPES and command[1] in serverdata[guild_id][0].keys():
                         # deletes an assigned role without requiring the players to clear all roles
                         del serverdata[guild_id][0][command[1]]
                         serverdata[guild_id][3] = True
                         await channel.send("Role cleared.")
-                        
+
                     elif command[1] in ARCHETYPES:
                         await channel.send("Role not currently assigned.")
-                    
+
                     else:
                         msg = ("Syntax error. Use `# clear [list/mailbox]` to clear the server's player list or " +
                                "mailbox, or `# clear [role]` to unassign a role without replacing it.")
@@ -387,68 +388,68 @@ async def on_message(message):
                     await channel.send("Use this command to clear the server's player list or mailbox.")
             else:
                 await channel.send("Sorry, this command isn't available in DMs.")
-            
-            
+
+
         elif command[0] in ORDR_COMMANDS:
             if not isinstance(message.channel, discord.DMChannel):
                 if len(serverdata[guild_id][2]) == 0 or serverdata[guild_id][3] == True:
                     # makes sure to only repopulate if the list is empty or the player list changed
                     serverdata[guild_id][3] = False
                     serverdata[guild_id][2] = []
-                    
+
                     # get a list of player tuples to put into the sorting algorithm
                     playerlist = []
                     for key in serverdata[guild_id][0]:
                         playerlist.append((key.title(), serverdata[guild_id][0][key]['nick'].title()))
-                    
+
                     # perform magic on them
                     whisperlist = get_n_unique_orderings(3, playerlist)
-                    
+
                     if whisperlist:
                         # make sure we got a list as output, indicating the magic was successful
                         for i in whisperlist:
                             # add each of the three orderings to the serverdata for later use
                             serverdata[guild_id][2].append(i)
-                
+
                 if len(serverdata[guild_id][2]) > 0:
                     # if there's at least one ordered pairing
                     msg = ""
                     order = serverdata[guild_id][2].pop(0)
-                    
+
                     for i in order:
                         # organize them for easy readability
                         msg += i[0] + " " + i[1] + " > "
-                        
+
                     # ouroboros eats its own tail
                     msg += order[0][0] + " " + order[0][1]
                     await channel.send(msg)
-                    
+
                 else:
                     # something went wrong, and we can't make a set of three lists. this is probably due to
                     # low player counts. totally fine though, we'll just output a random list instead.
                     playerlist = []
                     for key in serverdata[guild_id][0]:
                         playerlist.append((key.title(), serverdata[guild_id][0][key]['nick'].title()))
-                    
+
                     if len(playerlist) > 0:
                         random.shuffle(playerlist)
                         msg = ""
-                        
+
                         for i in playerlist:
                             msg += i[0] + " " + i[1] + " > "
                         msg += playerlist[0][0] + " " + playerlist[0][1]
                         await channel.send(msg)
-                        
+
                     else:
                         await channel.send("No players currently on this server. Use `# assign` to add some!")
             else:
                 await channel.send("Sorry, this command isn't available in DMs.")
-            
-            
+
+
         elif command[0] in FLIP_COMMANDS:
             # coin flip function for the whispers game
             coin = random.randint(0, 1)
-            
+
             if coin == 0:
                 await channel.send("Tails. The question is revealed.")
             elif coin == 1:
@@ -456,8 +457,22 @@ async def on_message(message):
             else:
                 # landed on its edge...?
                 await channel.send("Uhh, that's not supposed to happen.")
-            
-            
+
+        elif command[0] in ANNC_COMMANDS:
+            # make an announcement that highlights all players of the current game
+            if isinstance(message.channel, discord.DMChannel):
+                await channel.send("Sorry, this command isn't available in DMs.")
+                return
+            if len(command) <= 1:
+                await channel.send("Syntax error -- what would you like to announce?\n"
+                                   "Use `#announce (announcement)` to highlight all current players.")
+                return
+            player_mentions = [v['@'] for v in serverdata[guild_id][0].values()]
+            msg = "{}\n{}".format(" ".join(command[1:]),
+                                  " ".join(player_mentions))
+            await channel.send(msg)
+            return
+
         elif command[0] in HELP_COMMANDS:
             msg = ("Cont.exe is a bot designed to help run online games of Jay Dragon's excellent post-apoc " +
                    "pop punk political dating sim Flower Court (jdragsky.itch.io/flower-court). It was primarily " +
@@ -481,20 +496,20 @@ async def on_message(message):
                    "question to someone new in each of the three rounds! " +
                    "\n`# flip` - Flips a coin, for use in the Whispers game." +
                    "\n`# help` - This, right here.\n\n")
-            
+
             if not isinstance(message.channel, discord.DMChannel):
                 msg += "Server ID: " + guild_id
-                
+
             else:
                 # just some helpful clarification for users DMing the bot
                 msg += ("Please note that with the exception of `# send`, `# flip`, and `# help`, these commands don't " +
                         "function in direct messages. If you're having issues, this may be why. If you're looking for the " +
                         "server ID of the server you're playing on, use `# list` or `# help` on that server.")
-                
+
             await channel.send(msg)
-            
+
         else:
-            await channel.send("Sorry, what was that? Try `# help` for more information, " + 
+            await channel.send("Sorry, what was that? Try `# help` for more information, " +
                                "or `# help me` to have the help message DM'd to you.")
 
 
