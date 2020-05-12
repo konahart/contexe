@@ -495,6 +495,7 @@ async def on_message(message):
                    "possible, avoids giving any pair of players in the same order- in other words, you should be asking a " +
                    "question to someone new in each of the three rounds! " +
                    "\n`# flip` - Flips a coin, for use in the Whispers game." +
+                   "\n`# announce (announcement)` - Highlight all current players with an announcement."
                    "\n`# help` - This, right here.\n\n")
 
             if not isinstance(message.channel, discord.DMChannel):
